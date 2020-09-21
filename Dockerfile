@@ -30,4 +30,5 @@ RUN npm ci
 
 # install server
 COPY index.js /app/index.js
+COPY emails /app/emails
 CMD [ "node", "app/index.js" ]

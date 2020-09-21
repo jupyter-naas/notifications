@@ -70,7 +70,7 @@ const router = express.Router();
 
 router.route('/send').post(send);
 
-app.use('/notifications', router);
+app.use('/', router);
 app.get('/', (req, res) => res.status(200).json({ status: 'ok' }));
 // eslint-disable-next-line no-console
 console.log('Start server');

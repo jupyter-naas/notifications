@@ -12,16 +12,6 @@ app.use(morgan('tiny'));
 app.use(express.json());
 
 const emailFrom = process.env.emailFrom || 'notification@naas.ai';
-
-// if (!process.env.EMAIL_HOST
-//     || !process.env.EMAIL_PORT
-//     || !process.env.EMAIL_USER
-//     || !process.env.EMAIL_PASSWORD
-// ) {
-//     // eslint-disable-next-line no-console
-//     console.error('error in config');
-//     process.exit(1);
-// }
 const configString = `${process.env.EMAIL_SECURE ? 'smtps' : 'smtp'}://${process.env.EMAIL_USER}:${process.env.EMAIL_PASSWORD}@${process.env.EMAIL_HOST}`;
 const transporterNM = nodemailer.createTransport(configString);
 
@@ -39,7 +29,28 @@ const loadEmail = (name) => {
 
 const send = async (req, res) => {
     if (req.body.email && req.body.email !== '') {
+        const mailOptions = {
+            from: emailFrom,
+            to: req.body.email,
+            subject: req.body.object,
+            text: req.body.content,
+            html: req.body.html || req.body.content,
+        };
+        try {
+            await transporterNM.sendMail(mailOptions);
+            return res.json({ email: 'send' });
+        } catch (err) {
+            return res.status(500).send({ error: err });
+        }
+    }
+    return res.status(500).send({ error: 'no email provided' });
+};
+
+const sendNotif = async (req, res) => {
+    if (req.body.email && req.body.email !== '') {
         let template = loadEmail('notification');
+        template = template.split('%EMAIL_FROM%').join(emailFrom);
+        template = template.split('%TITLE%').join(req.body.title);
         template = template.split('%EMAIL%').join(req.body.email);
         template = template.split('%OBJECT%').join(req.body.object);
         template = template.split('%CONTENT%').join(req.body.content);
@@ -69,6 +80,7 @@ const router = express.Router();
 // notification
 
 router.route('/send').post(send);
+router.route('/send_notif').post(sendNotif);
 
 app.use('/', router);
 app.get('/', (req, res) => res.status(200).json({ status: 'ok' }));

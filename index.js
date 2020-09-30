@@ -40,6 +40,8 @@ const send = async (req, res) => {
             await transporterNM.sendMail(mailOptions);
             return res.json({ email: 'send' });
         } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('Send Error:', err);
             return res.status(500).send({ error: err });
         }
     }
@@ -70,6 +72,8 @@ const sendStatus = async (req, res) => {
             await transporterNM.sendMail(mailOptions);
             return res.json({ email: 'send' });
         } catch (err) {
+            // eslint-disable-next-line no-console
+            console.error('Send Status Error:', err);
             return res.status(500).send({ error: err });
         }
     }

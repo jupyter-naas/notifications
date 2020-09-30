@@ -56,9 +56,9 @@ const sendStatus = async (req, res) => {
         template = template.split('%EMAIL%').join(req.body.email);
         template = template.split('%SUBJECT%').join(req.body.subject);
         template = template.split('%CONTENT%').join(req.body.content);
-        if (req.body && req.body.custom_vars && Array.isArray(req.body.custom_vars)) {
-            req.body.custom_vars.forEach((customVar) => {
-                template = template.split(`%${customVar.toUpperCase()}%`).join(customVar);
+        if (req.body && req.body.custom_vars && typeof req.body.custom_vars === 'object') {
+            Object.entries(req.body.custom_vars).forEach(([key, value]) => {
+                template = template.split(`%${key.toUpperCase()}%`).join(value);
             });
         }
         const mailOptions = {

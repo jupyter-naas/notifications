@@ -46,9 +46,9 @@ const send = async (req, res) => {
     return res.status(500).send({ error: 'no email provided' });
 };
 
-const sendNotif = async (req, res) => {
+const sendStatus = async (req, res) => {
     if (req.body.email && req.body.email !== '') {
-        let template = loadEmail('notification');
+        let template = loadEmail('status');
         template = template.split('%EMAIL_FROM%').join(emailFrom);
         template = template.split('%TITLE%').join(req.body.title);
         template = template.split('%EMAIL%').join(req.body.email);
@@ -80,7 +80,7 @@ const router = express.Router();
 // notification
 
 router.route('/send').post(send);
-router.route('/send_notif').post(sendNotif);
+router.route('/send_status').post(sendStatus);
 
 app.use('/', router);
 app.get('/', (req, res) => res.status(200).json({ status: 'ok' }));

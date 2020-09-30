@@ -54,7 +54,7 @@ const sendStatus = async (req, res) => {
         template = template.split('%EMAIL_FROM%').join(emailFrom);
         template = template.split('%TITLE%').join(req.body.title);
         template = template.split('%EMAIL%').join(req.body.email);
-        template = template.split('%OBJECT%').join(req.body.object);
+        template = template.split('%SUBJECT%').join(req.body.subject);
         template = template.split('%CONTENT%').join(req.body.content);
         if (req.body && req.body.custom_vars && Array.isArray(req.body.custom_vars)) {
             req.body.custom_vars.forEach((customVar) => {

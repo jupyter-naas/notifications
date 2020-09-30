@@ -56,7 +56,7 @@ const sendStatus = async (req, res) => {
         template = template.split('%EMAIL%').join(req.body.email);
         template = template.split('%OBJECT%').join(req.body.object);
         template = template.split('%CONTENT%').join(req.body.content);
-        if (req.body && req.body.vars && Array.isArray(req.body.vars)) {
+        if (req.body && req.body.custom_vars && Array.isArray(req.body.custom_vars)) {
             req.body.custom_vars.forEach((customVar) => {
                 template = template.split(`%${customVar.toUpperCase()}%`).join(customVar);
             });
@@ -64,7 +64,7 @@ const sendStatus = async (req, res) => {
         const mailOptions = {
             from: emailFrom,
             to: req.body.email,
-            subject: req.body.object,
+            subject: req.body.subject,
             text: req.body.content,
             html: template,
         };

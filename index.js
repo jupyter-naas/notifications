@@ -11,7 +11,7 @@ app.set('port', port);
 app.use(morgan('tiny'));
 app.use(express.json());
 
-const emailFrom = process.env.emailFrom || 'notification@naas.ai';
+const emailFrom = process.env.emailFrom || 'notifications@naas.ai';
 const configString = `${process.env.EMAIL_SECURE ? 'smtps' : 'smtp'}://${process.env.EMAIL_USER}:${process.env.EMAIL_PASSWORD}@${process.env.EMAIL_HOST}`;
 const transporterNM = nodemailer.createTransport(configString);
 
@@ -32,7 +32,7 @@ const send = async (req, res) => {
         const mailOptions = {
             from: emailFrom,
             to: req.body.email,
-            subject: req.body.object,
+            subject: req.body.subject,
             text: req.body.content,
             html: req.body.html || req.body.content,
         };

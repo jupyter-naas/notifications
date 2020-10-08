@@ -1,5 +1,6 @@
 import express from 'express';
 import morgan from 'morgan';
+import fileUpload from 'express-fileupload';
 
 import nodemailer from 'nodemailer';
 import { readFileSync } from 'fs';
@@ -10,6 +11,7 @@ const port = (process.env.PORT || 3003);
 app.set('port', port);
 app.use(morgan('tiny'));
 app.use(express.json());
+app.use(fileUpload());
 
 const emailFrom = process.env.emailFrom || 'notifications@naas.ai';
 const configString = `${process.env.EMAIL_SECURE ? 'smtps' : 'smtp'}://${process.env.EMAIL_USER}:${process.env.EMAIL_PASSWORD}@${process.env.EMAIL_HOST}`;
@@ -34,8 +36,19 @@ const send = async (req, res) => {
             to: req.body.email,
             subject: req.body.subject,
             text: req.body.content,
+            attachments: [],
             html: req.body.html || req.body.content,
         };
+        if (req.files) {
+            req.files.forEach((file) => {
+                const fileObj = {
+                    filename: file.name,
+                    contentType: file.mimetype,
+                    content: file.data,
+                };
+                mailOptions.attachments.push(fileObj);
+            });
+        }
         try {
             await transporterNM.sendMail(mailOptions);
             return res.json({ email: 'send' });
@@ -66,8 +79,19 @@ const sendStatus = async (req, res) => {
             to: req.body.email,
             subject: req.body.subject,
             text: req.body.content,
+            attachments: [],
             html: template,
         };
+        if (req.files) {
+            req.files.forEach((file) => {
+                const fileObj = {
+                    filename: file.name,
+                    contentType: file.mimetype,
+                    content: file.data,
+                };
+                mailOptions.attachments.push(fileObj);
+            });
+        }
         try {
             await transporterNM.sendMail(mailOptions);
             return res.json({ email: 'send' });

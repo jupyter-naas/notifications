@@ -53,14 +53,15 @@ const send = async (req, res) => {
             html: req.body.html || req.body.content,
         };
         if (req.files) {
-            req.files.forEach((file) => {
-                const fileObj = {
-                    filename: file.name,
-                    contentType: file.mimetype,
-                    content: file.data,
-                };
-                mailOptions.attachments.push(fileObj);
-            });
+            Object.values(req.files)
+                .forEach((file) => {
+                    const fileObj = {
+                        filename: file.name,
+                        contentType: file.mimetype,
+                        content: file.data,
+                    };
+                    mailOptions.attachments.push(fileObj);
+                });
         }
         try {
             await transporterNM.sendMail(mailOptions);
@@ -96,7 +97,7 @@ const sendStatus = async (req, res) => {
             html: template,
         };
         if (req.files) {
-            Object.value(req.files)
+            Object.values(req.files)
                 .forEach((file) => {
                     const fileObj = {
                         filename: file.name,

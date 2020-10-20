@@ -43,80 +43,82 @@ const loadEmail = (name) => {
 };
 
 const send = async (req, res) => {
-    if (req.body.email && req.body.email !== '') {
-        const mailOptions = {
-            from: emailFrom,
-            to: req.body.email,
-            subject: req.body.subject,
-            text: req.body.content,
-            attachments: [],
-            html: req.body.html || req.body.content,
-        };
-        if (req.files) {
-            Object.values(req.files)
-                .forEach((file) => {
-                    const fileObj = {
-                        filename: file.name,
-                        contentType: file.mimetype,
-                        content: file.data,
-                    };
-                    mailOptions.attachments.push(fileObj);
-                });
-        }
-        try {
-            await transporterNM.sendMail(mailOptions);
-            return res.json({ email: 'send' });
-        } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error('Send Error:', err);
-            return res.status(500).send({ error: err });
-        }
+    if (!req.body || !req.body.email || !req.body.email === '') {
+        return res.status(500).send({ error: 'Missing body or email' });
     }
-    return res.status(500).send({ error: 'no email provided' });
+    const from = req.body.from || emailFrom;
+    const mailOptions = {
+        from,
+        to: req.body.email,
+        subject: req.body.subject,
+        text: req.body.content,
+        attachments: [],
+        html: req.body.html || req.body.content,
+    };
+    if (req.files) {
+        Object.values(req.files)
+            .forEach((file) => {
+                const fileObj = {
+                    filename: file.name,
+                    contentType: file.mimetype,
+                    content: file.data,
+                };
+                mailOptions.attachments.push(fileObj);
+            });
+    }
+    try {
+        await transporterNM.sendMail(mailOptions);
+        return res.json({ email: 'send' });
+    } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Send Error:', err);
+        return res.status(500).send({ error: err });
+    }
 };
 
 const sendStatus = async (req, res) => {
-    if (req.body.email && req.body.email !== '') {
-        let template = loadEmail('status');
-        template = template.split('%EMAIL_FROM%').join(emailFrom);
-        template = template.split('%TITLE%').join(req.body.title);
-        template = template.split('%EMAIL%').join(req.body.email);
-        template = template.split('%SUBJECT%').join(req.body.subject);
-        template = template.split('%CONTENT%').join(req.body.content);
-        if (req.body && req.body.custom_vars && typeof req.body.custom_vars === 'object') {
-            Object.entries(req.body.custom_vars).forEach(([key, value]) => {
-                template = template.split(`%${key.toUpperCase()}%`).join(value);
-            });
-        }
-        const mailOptions = {
-            from: emailFrom,
-            to: req.body.email,
-            subject: req.body.subject,
-            text: req.body.content,
-            attachments: [],
-            html: template,
-        };
-        if (req.files) {
-            Object.values(req.files)
-                .forEach((file) => {
-                    const fileObj = {
-                        filename: file.name,
-                        contentType: file.mimetype,
-                        content: file.data,
-                    };
-                    mailOptions.attachments.push(fileObj);
-                });
-        }
-        try {
-            await transporterNM.sendMail(mailOptions);
-            return res.json({ email: 'send' });
-        } catch (err) {
-            // eslint-disable-next-line no-console
-            console.error('Send Status Error:', err);
-            return res.status(500).send({ error: err });
-        }
+    if (!req.body || !req.body.email || !req.body.email === '') {
+        return res.status(500).send({ error: 'Missing body or email' });
     }
-    return res.status(500).send({ error: 'no email provided' });
+    const from = req.body.from || emailFrom;
+    let template = loadEmail('status');
+    template = template.split('%EMAIL_FROM%').join(from);
+    template = template.split('%TITLE%').join(req.body.title);
+    template = template.split('%EMAIL%').join(req.body.email);
+    template = template.split('%SUBJECT%').join(req.body.subject);
+    template = template.split('%CONTENT%').join(req.body.content);
+    if (req.body && req.body.custom_vars && typeof req.body.custom_vars === 'object') {
+        Object.entries(req.body.custom_vars).forEach(([key, value]) => {
+            template = template.split(`%${key.toUpperCase()}%`).join(value);
+        });
+    }
+    const mailOptions = {
+        from,
+        to: req.body.email,
+        subject: req.body.subject,
+        text: req.body.content,
+        attachments: [],
+        html: template,
+    };
+    if (req.files) {
+        Object.values(req.files)
+            .forEach((file) => {
+                const fileObj = {
+                    filename: file.name,
+                    contentType: file.mimetype,
+                    content: file.data,
+                };
+                mailOptions.attachments.push(fileObj);
+            });
+    }
+    try {
+        await transporterNM.sendMail(mailOptions);
+        return res.json({ email: 'send' });
+    } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Send Status Error:', err);
+        return res.status(500).send({ error: err });
+    }
 };
 
 const router = express.Router();

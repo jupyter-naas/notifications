@@ -169,29 +169,25 @@ const sendStatus = async (req, res) => {
 };
 
 const router = express.Router();
-// notification
 
 const authToHub = async (req, res, next) => {
     try {
         const options = {
-            method: 'GET',
             headers: {
                 'content-type': 'application/json',
-                Authorization: req.headers.Authorization,
+                authorization: req.headers.authorization,
             },
-            ur: `${hubHost}/hub/api/user`,
         };
-        const result = await axios(options);
-        if (!result || !result.email) {
+        const result = await axios.get(`https://${hubHost}/hub/api/user`, options);
+        if (!result || !result.data || !result.data.name) {
             throw Error('User not found');
         }
-        req.auth = { email: result.email };
+        req.auth = { email: result.data.name };
         return next();
     } catch (err) {
         return res.status(500).send(err);
     }
 };
-
 router.route('/send').post(authToHub, send);
 router.route('/send_status').post(authToHub, sendStatus);
 

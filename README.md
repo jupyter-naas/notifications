@@ -14,3 +14,7 @@ Allow naas to send status to user and custom notifications
 `EMAIL_HOST` host to connect smtp server
 
 `SENTRY_DSN` to connect sentry
+
+`HUB_HOST` => hostname of the deployed jupyter hub instance
+
+`PROXY_DB` => 'sqlite::memory:' or postgressuri 'postgres://user:pass@example.com:5432/dbname'

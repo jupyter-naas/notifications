@@ -6,9 +6,44 @@ import Tracing from '@sentry/tracing';
 import nodemailer from 'nodemailer';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import seq from 'sequelize';
+import axios from 'axios';
+
+const uri = process.env.PROXY_DB;
+let sequelize;
+
+if (uri) {
+    sequelize = new seq.Sequelize(uri, { logging: false });
+} else {
+    sequelize = new seq.Sequelize({
+        dialect: 'sqlite',
+        storage: 'database.sqlite',
+        // eslint-disable-next-line no-console
+        // logging: (...msg) => console.log(msg), // Displays all log function call parameters
+    });
+}
+const Notif = sequelize.define('Notif', {
+    user: {
+        type: seq.DataTypes.STRING,
+        allowNull: false,
+    },
+    subject: {
+        type: seq.DataTypes.STRING,
+        allowNull: false,
+    },
+    to: {
+        type: seq.DataTypes.STRING,
+        allowNull: false,
+    },
+    from: {
+        type: seq.DataTypes.STRING,
+        allowNull: false,
+    },
+});
 
 const app = express();
 const port = (process.env.PORT || 3003);
+const hubHost = process.env.HUB_HOST || 'app.naas.ai';
 app.set('port', port);
 app.use(morgan('tiny'));
 app.use(express.json());
@@ -68,6 +103,12 @@ const send = async (req, res) => {
     }
     try {
         await transporterNM.sendMail(mailOptions);
+        Notif.create({
+            user: req.auth.email,
+            from,
+            to: req.body.email,
+            subject: req.body.subject,
+        });
         return res.json({ email: 'send' });
     } catch (err) {
         // eslint-disable-next-line no-console
@@ -113,6 +154,12 @@ const sendStatus = async (req, res) => {
     }
     try {
         await transporterNM.sendMail(mailOptions);
+        Notif.create({
+            user: req.auth.email,
+            from,
+            to: req.body.email,
+            subject: req.body.subject,
+        });
         return res.json({ email: 'send' });
     } catch (err) {
         // eslint-disable-next-line no-console
@@ -124,8 +171,29 @@ const sendStatus = async (req, res) => {
 const router = express.Router();
 // notification
 
-router.route('/send').post(send);
-router.route('/send_status').post(sendStatus);
+const authToHub = async (req, res, next) => {
+    try {
+        const options = {
+            method: 'GET',
+            headers: {
+                'content-type': 'application/json',
+                Authorization: req.headers.Authorization,
+            },
+            ur: `${hubHost}/hub/api/user`,
+        };
+        const result = await axios(options);
+        if (!result || !result.email) {
+            throw Error('User not found');
+        }
+        req.auth = { email: result.email };
+        return next();
+    } catch (err) {
+        return res.status(500).send(err);
+    }
+};
+
+router.route('/send').post(authToHub, send);
+router.route('/send_status').post(authToHub, sendStatus);
 
 app.use('/', router);
 app.get('/', (req, res) => res.status(200).json({ status: 'ok' }));
@@ -137,6 +205,14 @@ if (process.env.SENTRY_DSN) {
 // eslint-disable-next-line no-console
 console.log('Start server');
 app.listen(app.get('port'), () => {
-    // eslint-disable-next-line no-console
-    console.log(`notification PID ${process.pid}, port ${app.get('port')}, http://localhost:${app.get('port')}`);
+    sequelize.authenticate().then(async () => {
+        await Notif.sync();
+        // eslint-disable-next-line no-console
+        console.log('Connection has been established successfully.');
+        // eslint-disable-next-line no-console
+        console.log(`Notification PID ${process.pid}, port ${app.get('port')}, http://localhost:${app.get('port')}`);
+    }).catch((error) => {
+        // eslint-disable-next-line no-console
+        console.error('Unable to connect to the database:', error);
+    });
 });

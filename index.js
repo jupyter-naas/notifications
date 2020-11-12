@@ -8,7 +8,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import seq from 'sequelize';
 import axios from 'axios';
-import uuid from 'uuid';
+import * as uuid from 'uuid';
 
 const uri = process.env.PROXY_DB;
 let sequelize;

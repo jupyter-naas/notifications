@@ -8,6 +8,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import seq from 'sequelize';
 import axios from 'axios';
+import uuid from 'uuid';
 
 const uri = process.env.PROXY_DB;
 let sequelize;
@@ -44,6 +45,10 @@ const Notif = sequelize.define('Notif', {
 const app = express();
 const port = (process.env.PORT || 3003);
 const hubHost = process.env.HUB_HOST || 'app.naas.ai';
+const adminToken = process.env.ADMIN_TOKEN || uuid.v4();
+const emailFrom = process.env.emailFrom || 'notifications@naas.ai';
+const configString = `${process.env.EMAIL_SECURE ? 'smtps' : 'smtp'}://${process.env.EMAIL_USER}:${process.env.EMAIL_PASSWORD}@${process.env.EMAIL_HOST}`;
+
 app.set('port', port);
 app.use(morgan('tiny'));
 app.use(express.json());
@@ -61,8 +66,6 @@ if (process.env.SENTRY_DSN) {
     app.use(Sentry.Handlers.tracingHandler());
 }
 
-const emailFrom = process.env.emailFrom || 'notifications@naas.ai';
-const configString = `${process.env.EMAIL_SECURE ? 'smtps' : 'smtp'}://${process.env.EMAIL_USER}:${process.env.EMAIL_PASSWORD}@${process.env.EMAIL_HOST}`;
 const transporterNM = nodemailer.createTransport(configString);
 
 const loadEmail = (name) => {
@@ -172,6 +175,10 @@ const router = express.Router();
 
 const authToHub = async (req, res, next) => {
     try {
+        if (req.headers.authorization === adminToken) {
+            req.auth = { email: emailFrom };
+            return next();
+        }
         const options = {
             headers: {
                 'content-type': 'application/json',

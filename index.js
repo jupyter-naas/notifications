@@ -82,6 +82,8 @@ const loadEmail = (name) => {
 
 const send = async (req, res) => {
     if (!req.body || !req.body.email || !req.body.email === '') {
+        // eslint-disable-next-line no-console
+        console.error('Send Error:', 'Missing body or email');
         return res.status(500).send({ error: 'Missing body or email' });
     }
     const from = req.body.from || emailFrom;
@@ -122,6 +124,8 @@ const send = async (req, res) => {
 
 const sendStatus = async (req, res) => {
     if (!req.body || !req.body.email || !req.body.email === '') {
+        // eslint-disable-next-line no-console
+        console.error('Send Error:', 'Missing body or email');
         return res.status(500).send({ error: 'Missing body or email' });
     }
     const from = req.body.from || emailFrom;
@@ -192,6 +196,8 @@ const authToHub = async (req, res, next) => {
         req.auth = { email: result.data.name };
         return next();
     } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Auth Error:', err);
         return res.status(500).send(err);
     }
 };

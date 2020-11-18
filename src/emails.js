@@ -1,70 +1,42 @@
-import express from 'express';
-import morgan from 'morgan';
-import fileUpload from 'express-fileupload';
-import Sentry from '@sentry/node';
-import Tracing from '@sentry/tracing';
 import nodemailer from 'nodemailer';
 import { readFileSync } from 'fs';
+import express from 'express';
 import { join } from 'path';
-import seq from 'sequelize';
 import axios from 'axios';
 import * as uuid from 'uuid';
+import {
+    Notif,
+} from './db';
 
-const uri = process.env.PROXY_DB;
-let sequelize;
-
-if (uri) {
-    sequelize = new seq.Sequelize(uri, { logging: false });
-} else {
-    sequelize = new seq.Sequelize({
-        dialect: 'sqlite',
-        storage: 'database.sqlite',
-        // eslint-disable-next-line no-console
-        // logging: (...msg) => console.log(msg), // Displays all log function call parameters
-    });
-}
-const Notif = sequelize.define('Notif', {
-    user: {
-        type: seq.DataTypes.STRING,
-        allowNull: false,
-    },
-    subject: {
-        type: seq.DataTypes.STRING,
-        allowNull: false,
-    },
-    to: {
-        type: seq.DataTypes.STRING,
-        allowNull: false,
-    },
-    from: {
-        type: seq.DataTypes.STRING,
-        allowNull: false,
-    },
-});
-
-const app = express();
-const port = (process.env.PORT || 3003);
-const hubHost = process.env.HUB_HOST || 'app.naas.ai';
 const adminToken = process.env.ADMIN_TOKEN || uuid.v4();
-const emailFrom = process.env.emailFrom || 'notifications@naas.ai';
+const hubHost = process.env.HUB_HOST || 'app.naas.ai';
 const configString = `${process.env.EMAIL_SECURE ? 'smtps' : 'smtp'}://${process.env.EMAIL_USER}:${process.env.EMAIL_PASSWORD}@${process.env.EMAIL_HOST}`;
+const emailFrom = process.env.emailFrom || 'notifications@naas.ai';
 
-app.set('port', port);
-app.use(morgan('tiny'));
-app.use(express.json());
-app.use(fileUpload());
-if (process.env.SENTRY_DSN) {
-    Sentry.init({
-        dsn: process.env.SENTRY_DSN,
-        integrations: [
-            new Sentry.Integrations.Http({ tracing: true }),
-            new Tracing.Integrations.Express({ app }),
-        ],
-        tracesSampleRate: 1.0,
-    });
-    app.use(Sentry.Handlers.requestHandler());
-    app.use(Sentry.Handlers.tracingHandler());
-}
+const authToHub = async (req, res, next) => {
+    try {
+        if (req.headers.authorization === adminToken) {
+            req.auth = { email: emailFrom };
+            return next();
+        }
+        const options = {
+            headers: {
+                'content-type': 'application/json',
+                authorization: req.headers.authorization,
+            },
+        };
+        const result = await axios.get(`https://${hubHost}/hub/api/user`, options);
+        if (!result || !result.data || !result.data.name) {
+            throw Error('User not found');
+        }
+        req.auth = { email: result.data.name };
+        return next();
+    } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Auth Error:', err);
+        return res.status(500).send(err);
+    }
+};
 
 const transporterNM = nodemailer.createTransport(configString);
 
@@ -175,53 +147,9 @@ const sendStatus = async (req, res) => {
     }
 };
 
-const router = express.Router();
+const routerEmail = express.Router();
 
-const authToHub = async (req, res, next) => {
-    try {
-        if (req.headers.authorization === adminToken) {
-            req.auth = { email: emailFrom };
-            return next();
-        }
-        const options = {
-            headers: {
-                'content-type': 'application/json',
-                authorization: req.headers.authorization,
-            },
-        };
-        const result = await axios.get(`https://${hubHost}/hub/api/user`, options);
-        if (!result || !result.data || !result.data.name) {
-            throw Error('User not found');
-        }
-        req.auth = { email: result.data.name };
-        return next();
-    } catch (err) {
-        // eslint-disable-next-line no-console
-        console.error('Auth Error:', err);
-        return res.status(500).send(err);
-    }
-};
-router.route('/send').post(authToHub, send);
-router.route('/send_status').post(authToHub, sendStatus);
+routerEmail.route('/send').post(authToHub, send);
+routerEmail.route('/send_status').post(authToHub, sendStatus);
 
-app.use('/', router);
-app.get('/', (req, res) => res.status(200).json({ status: 'ok' }));
-if (process.env.SENTRY_DSN) {
-    app.use(Sentry.Handlers.errorHandler());
-    // eslint-disable-next-line no-console
-    console.log('Sentry enabled', process.env.SENTRY_DSN);
-}
-// eslint-disable-next-line no-console
-console.log('Start server');
-app.listen(app.get('port'), () => {
-    sequelize.authenticate().then(async () => {
-        await Notif.sync();
-        // eslint-disable-next-line no-console
-        console.log('Connection has been established successfully.');
-        // eslint-disable-next-line no-console
-        console.log(`Notification PID ${process.pid}, port ${app.get('port')}, http://localhost:${app.get('port')}`);
-    }).catch((error) => {
-        // eslint-disable-next-line no-console
-        console.error('Unable to connect to the database:', error);
-    });
-});
+export default routerEmail;

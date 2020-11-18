@@ -1,3 +1,9 @@
+## 1.1.1b0 (2020-11-18)
+
+### Refactor
+
+- :recycle: split code in files
+
 ## 1.1.0 (2020-11-17)
 
 ### Fix

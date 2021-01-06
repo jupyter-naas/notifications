@@ -8,6 +8,8 @@ import {
     Notif,
 } from './db';
 
+console.log(process.env.ADMIN_TOKEN)
+
 const adminToken = process.env.ADMIN_TOKEN || uuid.v4();
 const hubHost = process.env.HUB_HOST || 'app.naas.ai';
 const configString = `${process.env.EMAIL_SECURE ? 'smtps' : 'smtp'}://${process.env.EMAIL_USER}:${process.env.EMAIL_PASSWORD}@${process.env.EMAIL_HOST}`;
@@ -33,7 +35,7 @@ const authToHub = async (req, res, next) => {
         return next();
     } catch (err) {
         // eslint-disable-next-line no-console
-        console.error('Auth Error:', err);
+        // console.error('Auth Error:', err);
         return res.status(500).send(err);
     }
 };
@@ -94,6 +96,13 @@ const send = async (req, res) => {
     }
 };
 
+const getList = async (req, res) => {
+    Notif.findAll().then((data) => {
+        return res.send({ emails: data });
+    })
+
+}
+
 const sendStatus = async (req, res) => {
     if (!req.body || !req.body.email || !req.body.email === '') {
         // eslint-disable-next-line no-console
@@ -151,5 +160,6 @@ const routerEmail = express.Router();
 
 routerEmail.route('/send').post(authToHub, send);
 routerEmail.route('/send_status').post(authToHub, sendStatus);
+routerEmail.route('/list').post(getList);
 
 export default routerEmail;

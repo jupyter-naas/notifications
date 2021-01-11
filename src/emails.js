@@ -97,6 +97,17 @@ const send = async (req, res) => {
 };
 
 const getList = async (req, res) => {
+    Notif.findAll({
+        where: {
+            user: req.auth.email
+          }
+        }).then((data) => {
+        return res.send({ emails: data });
+    })
+
+}
+
+const getListAdmin = async (req, res) => {
     Notif.findAll().then((data) => {
         return res.send({ emails: data });
     })
@@ -160,6 +171,7 @@ const routerEmail = express.Router();
 
 routerEmail.route('/send').post(authToHub, send);
 routerEmail.route('/send_status').post(authToHub, sendStatus);
-routerEmail.route('/list').post(getList);
+routerEmail.route('/list').post(authToHub,getList);
+routerEmail.route('/list_all').post(authToHub,getListAdmin);
 
 export default routerEmail;

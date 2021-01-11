@@ -8,8 +8,6 @@ import {
     Notif,
 } from './db';
 
-console.log(process.env.ADMIN_TOKEN)
-
 const adminToken = process.env.ADMIN_TOKEN || uuid.v4();
 const hubHost = process.env.HUB_HOST || 'app.naas.ai';
 const configString = `${process.env.EMAIL_SECURE ? 'smtps' : 'smtp'}://${process.env.EMAIL_USER}:${process.env.EMAIL_PASSWORD}@${process.env.EMAIL_HOST}`;
@@ -31,7 +29,7 @@ const authToHub = async (req, res, next) => {
         if (!result || !result.data || !result.data.name) {
             throw Error('User not found');
         }
-        req.auth = { email: result.data.name };
+        req.auth = { email: result.data.name, admin: result.data.admin };
         return next();
     } catch (err) {
         // eslint-disable-next-line no-console
@@ -108,9 +106,13 @@ const getList = async (req, res) => {
 }
 
 const getListAdmin = async (req, res) => {
-    Notif.findAll().then((data) => {
-        return res.send({ emails: data });
-    })
+    if(req.auth.admin) {
+        Notif.findAll().then((data) => {
+            return res.send({ emails: data });
+        })
+    } else {
+        return res.status(500).send({ error: 'Unable to access the data' });
+    }
 
 }
 

@@ -29,11 +29,11 @@ const authToHub = async (req, res, next) => {
         if (!result || !result.data || !result.data.name) {
             throw Error('User not found');
         }
-        req.auth = { email: result.data.name };
+        req.auth = { email: result.data.name, admin: result.data.admin };
         return next();
     } catch (err) {
         // eslint-disable-next-line no-console
-        console.error('Auth Error:', err);
+        // console.error('Auth Error:', err);
         return res.status(500).send(err);
     }
 };
@@ -94,6 +94,28 @@ const send = async (req, res) => {
     }
 };
 
+const getList = async (req, res) => {
+    Notif.findAll({
+        where: {
+            user: req.auth.email
+          }
+        }).then((data) => {
+        return res.send({ emails: data });
+    })
+
+}
+
+const getListAdmin = async (req, res) => {
+    if(req.auth.admin) {
+        Notif.findAll().then((data) => {
+            return res.send({ emails: data });
+        })
+    } else {
+        return res.status(500).send({ error: 'Unable to access the data' });
+    }
+
+}
+
 const sendStatus = async (req, res) => {
     if (!req.body || !req.body.email || !req.body.email === '') {
         // eslint-disable-next-line no-console
@@ -151,5 +173,7 @@ const routerEmail = express.Router();
 
 routerEmail.route('/send').post(authToHub, send);
 routerEmail.route('/send_status').post(authToHub, sendStatus);
+routerEmail.route('/list').post(authToHub,getList);
+routerEmail.route('/list_all').post(authToHub,getListAdmin);
 
 export default routerEmail;

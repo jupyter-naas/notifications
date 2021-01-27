@@ -94,27 +94,20 @@ const send = async (req, res) => {
     }
 };
 
-const getList = async (req, res) => {
-    Notif.findAll({
-        where: {
-            user: req.auth.email
-          }
-        }).then((data) => {
-        return res.send({ emails: data });
-    })
+const getList = async (req, res) => Notif.findAll({
+    where: {
+        user: req.auth.email,
+    },
+}).then((data) => res.send({ emails: data }))
+    .catch((err) => res.status(500).json(err));
 
-}
-
-const getListAdmin = async (req, res) => {
-    if(req.auth.admin) {
-        Notif.findAll().then((data) => {
-            return res.send({ emails: data });
-        })
-    } else {
-        return res.status(500).send({ error: 'Unable to access the data' });
+const getAdmin = async (req, res) => {
+    if (req.auth.admin) {
+        return Notif.findAll().then((data) => res.send({ emails: data }))
+            .catch((err) => res.status(500).json(err));
     }
-
-}
+    return res.status(500).send({ error: 'Unable to access the data' });
+};
 
 const sendStatus = async (req, res) => {
     if (!req.body || !req.body.email || !req.body.email === '') {
@@ -171,9 +164,15 @@ const sendStatus = async (req, res) => {
 
 const routerEmail = express.Router();
 
+//  REMOVE in next release
 routerEmail.route('/send').post(authToHub, send);
 routerEmail.route('/send_status').post(authToHub, sendStatus);
-routerEmail.route('/list').post(authToHub,getList);
-routerEmail.route('/list_all').post(authToHub,getListAdmin);
+routerEmail.route('/list').post(authToHub, getList);
+routerEmail.route('/list_all').post(authToHub, getAdmin);
+
+routerEmail.route('/').post(authToHub, send);
+routerEmail.route('/').get(authToHub, getList);
+routerEmail.route('/status').post(authToHub, sendStatus);
+routerEmail.route('/admin').get(authToHub, getAdmin);
 
 export default routerEmail;

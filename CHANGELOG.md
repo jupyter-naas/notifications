@@ -1,3 +1,9 @@
+## 1.2.0 (2021-03-30)
+
+### Feat
+
+- only custom sender for admins for now
+
 ## 1.1.4 (2021-01-27)
 
 ## 1.1.3 (2021-01-27)

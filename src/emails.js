@@ -58,7 +58,7 @@ const send = async (req, res) => {
         console.error('Send Error:', 'Missing body or email');
         return res.status(500).send({ error: 'Missing body or email' });
     }
-    const from = req.body.from || emailFrom;
+    const from = req.auth.admin && req.body.from ?  req.body.from : emailFrom;
     const mailOptions = {
         from,
         to: req.body.email,
@@ -115,7 +115,7 @@ const sendStatus = async (req, res) => {
         console.error('Send Error:', 'Missing body or email');
         return res.status(500).send({ error: 'Missing body or email' });
     }
-    const from = req.body.from || emailFrom;
+    const from = req.auth.admin && req.body.from ?  req.body.from : emailFrom;
     let template = loadEmail('status');
     template = template.split('%EMAIL_FROM%').join(from);
     template = template.split('%TITLE%').join(req.body.title);

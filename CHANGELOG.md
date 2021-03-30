@@ -1,3 +1,9 @@
+## 1.3.0 (2021-03-30)
+
+### Feat
+
+- allow user to send with they own email too
+
 ## 1.2.0 (2021-03-30)
 
 ### Feat

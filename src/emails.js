@@ -64,7 +64,6 @@ const send = async (req, res) => {
     } else if (req.body.from && req.body.from === req.auth.email) {
         from = req.body.from
     }
-    const from = req.auth.admin && req.body.from ?  req.body.from : emailFrom;
     const mailOptions = {
         from,
         to: req.body.email,

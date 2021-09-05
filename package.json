@@ -22,7 +22,7 @@
   "dependencies": {
     "@sentry/node": "^5.25.0",
     "@sentry/tracing": "^5.25.0",
-    "axios": "^0.21.0",
+    "axios": "^0.21.3",
     "express": "^4.17.1",
     "express-fileupload": "^1.2.0",
     "morgan": "^1.10.0",
